@@ -20,12 +20,16 @@ import com.vn2bs.common.dto.IResponse;
 import com.vn2bs.common.dto.ThuTuc1.GuiHoSoDto;
 import com.vn2bs.common.dto.ThuTuc1.GuiHoSoSubmitResponse;
 import com.vn2bs.nsw_gateway.services.NSWMessageHandler;
+import com.vn2bs.nsw_gateway.validation.GuiHoSoValidator;
 
 @ExtendWith(MockitoExtension.class)
 class NSW_ThuTuc1RestTest {
 
     @Mock
     private NSWMessageHandler nswMessageHandler;
+
+    @Mock
+    private GuiHoSoValidator guiHoSoValidator;
 
     @InjectMocks
     private NSW_ThuTuc1Rest nswThuTuc1Rest;

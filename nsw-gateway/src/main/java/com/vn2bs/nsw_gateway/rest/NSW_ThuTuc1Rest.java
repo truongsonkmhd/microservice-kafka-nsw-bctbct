@@ -18,6 +18,7 @@ import com.vn2bs.common.dto.IResponse;
 import com.vn2bs.common.dto.ThuTuc1.GuiHoSoDto;
 import com.vn2bs.common.dto.ThuTuc1.GuiHoSoSubmitResponse;
 import com.vn2bs.nsw_gateway.services.NSWMessageHandler;
+import com.vn2bs.nsw_gateway.validation.GuiHoSoValidator;
 
 import io.minio.errors.ErrorResponseException;
 import io.minio.errors.InsufficientDataException;
@@ -25,6 +26,11 @@ import io.minio.errors.InternalException;
 import io.minio.errors.InvalidResponseException;
 import io.minio.errors.ServerException;
 import io.minio.errors.XmlParserException;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.tags.Tags;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +44,18 @@ public class NSW_ThuTuc1Rest {
     @Autowired
     private NSWMessageHandler nswMessageHandler;
 
+    @Autowired
+    private GuiHoSoValidator guiHoSoValidator;
+
+    @Operation(
+            summary = "Nộp hồ sơ ThuTuc1",
+            description = "Multipart form-data: `thongTin` (JSON GuiHoSoDto, required), `tepDinhKem` (files, optional)")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Hồ sơ đã tạo",
+                    content = @Content(schema = @Schema(implementation = GuiHoSoSubmitResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Thiếu thongTin hoặc file vượt 10MB"),
+            @ApiResponse(responseCode = "409", description = "maSoHoSo trùng")
+    })
     @PostMapping("gui-ho-so")
     public ResponseEntity<IResponse<GuiHoSoSubmitResponse>> guiHoSo(
             @RequestPart(name = "thongTin") GuiHoSoDto thongTin,
@@ -45,6 +63,8 @@ public class NSW_ThuTuc1Rest {
             throws InvalidKeyException, ErrorResponseException, InsufficientDataException, InternalException,
             InvalidResponseException, NoSuchAlgorithmException, ServerException, XmlParserException,
             IllegalArgumentException, IOException {
+
+        guiHoSoValidator.validate(thongTin, tepDinhKem);
 
         log.info("NSW_ThuTuc1Rest - guiHoSo: maSoHoSo={} tenNguoiGui={}",
                 thongTin.getMaSoHoSo(), thongTin.getTenNguoiGui());
