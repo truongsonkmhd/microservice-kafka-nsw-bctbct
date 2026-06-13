@@ -1,0 +1,44 @@
+{
+  "configurations": [
+    {
+      "type": "java",
+      "name": "BCT Gateway",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "mainClass": "com.vn2bs.bct_gateway.BctGatewayApplication",
+      "projectName": "bct-gateway",
+      "args": "",
+      "envFile": "${workspaceFolder}/.env"
+    },
+    {
+      "type": "java",
+      "name": "BCT Adapter",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "mainClass": "com.vn2bs.bct_adapter.BctAdapterApplication",
+      "projectName": "bct-adapter",
+      "args": "",
+      "envFile": "${workspaceFolder}/.env"
+    },
+    {
+      "type": "java",
+      "name": "NSW Adapter",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "mainClass": "com.vn2bs.nsw_adapter.NswAdapterApplication",
+      "projectName": "nsw-adapter",
+      "args": "",
+      "envFile": "${workspaceFolder}/.env"
+    },
+    {
+      "type": "java",
+      "name": "NSW Gateway",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "mainClass": "com.vn2bs.nsw_gateway.NswGatewayApplication",
+      "projectName": "nsw-gateway",
+      "args": "",
+      "envFile": "${workspaceFolder}/.env"
+    }
+  ]
+}

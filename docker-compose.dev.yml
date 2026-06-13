@@ -1,0 +1,42 @@
+services:
+  nsw-kafka:
+    image: apache/kafka
+    container_name: nsw-kafka
+    restart: unless-stopped
+    ports:
+      - "9092:9092"
+  bct-kafka:
+    image: apache/kafka
+    container_name: bct-kafka
+    restart: unless-stopped
+    ports:
+      - "9093:9092"
+  nsw-mysql:
+    image: mysql
+    container_name: nsw-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: nsw_adapter
+    ports:
+      - "3316:3306"
+  bct-mysql:
+    image: mysql
+    container_name: bct-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: bct_adapter
+    ports:
+      - "3326:3306"
+  minio:
+    image: minio/minio
+    container_name: minio
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    command: server /data --console-address ":9001"

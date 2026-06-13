@@ -1,0 +1,14 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <changeSet author="dev-a" id="20260613-guihoso-v2">
+        <addColumn tableName="thutuc1_guihoso">
+            <column name="business_status" type="VARCHAR(50)" defaultValue="KHOI_TAO">
+                <constraints nullable="false"/>
+            </column>
+            <column name="bucket_name" type="VARCHAR(255)"/>
+            <column name="correlation_id" type="VARCHAR(255)"/>
+        </addColumn>
+    </changeSet>
+</databaseChangeLog>
