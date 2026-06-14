@@ -16,12 +16,17 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
+import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.support.serializer.JacksonJsonDeserializer;
 import org.springframework.kafka.support.serializer.JacksonJsonSerializer;
+import org.springframework.util.backoff.FixedBackOff;
+
+import lombok.extern.slf4j.Slf4j;
 
 import com.vn2bs.common.domains.ThuTuc1.ThuTuc1_GuiHoSo;
 
 @Configuration
+@Slf4j
 public class GuiHoSoKafkaConfiguration {
 
     @Value(value = "${spring.kafka.bootstrap-servers}")
@@ -49,11 +54,13 @@ public class GuiHoSoKafkaConfiguration {
         Map<String, Object> props = new HashMap<>();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
         props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
+        props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JacksonJsonDeserializer.class);
 
         JacksonJsonDeserializer<ThuTuc1_GuiHoSo> deserializer = new JacksonJsonDeserializer<>(ThuTuc1_GuiHoSo.class);
         deserializer.addTrustedPackages("*");
+        deserializer.setUseTypeHeaders(false);
 
         return new DefaultKafkaConsumerFactory<>(
                 props,
@@ -66,6 +73,10 @@ public class GuiHoSoKafkaConfiguration {
         ConcurrentKafkaListenerContainerFactory<String, ThuTuc1_GuiHoSo> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(ThuTuc1_GuiHoSo_consumerFactory());
+        factory.setCommonErrorHandler(new DefaultErrorHandler((record, ex) ->
+                log.error("GuiHoSo Kafka listener failed topic={} partition={} offset={} error={}",
+                        record.topic(), record.partition(), record.offset(), ex.getMessage(), ex),
+                new FixedBackOff(1000L, 2L)));
         return factory;
     }
 }

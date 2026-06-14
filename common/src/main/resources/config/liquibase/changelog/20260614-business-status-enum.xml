@@ -1,0 +1,19 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <changeSet author="dev-a" id="20260614-business-status-enum">
+        <sql>
+            ALTER TABLE thutuc1_guihoso
+            MODIFY COLUMN business_status ENUM(
+                'KHOI_TAO',
+                'CHO_XU_LY',
+                'DA_XU_LY',
+                'CHO_PHE_DUYET',
+                'DA_PHE_DUYET',
+                'TU_CHOI',
+                'DA_HUY'
+            ) DEFAULT 'KHOI_TAO' NOT NULL;
+        </sql>
+    </changeSet>
+</databaseChangeLog>
