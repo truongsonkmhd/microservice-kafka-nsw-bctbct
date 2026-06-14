@@ -5,5 +5,5 @@
 // Generated on: 2026.06.14 at 09:08:57 AM ICT 
 //
 
-@jakarta.xml.bind.annotation.XmlSchema(namespace = "thutuc1.byt.xsd.nsw_gateway.vn2bs.com", elementFormDefault = jakarta.xml.bind.annotation.XmlNsForm.QUALIFIED)
-package com.vn2bs.nsw_gateway.xsd.byt.thutuc1;
+@jakarta.xml.bind.annotation.XmlSchema(namespace = "guihoso.bct.xsd.nsw_gateway.vn2bs.com", elementFormDefault = jakarta.xml.bind.annotation.XmlNsForm.QUALIFIED)
+package com.vn2bs.nsw_gateway.xsd.bct.guihoso;

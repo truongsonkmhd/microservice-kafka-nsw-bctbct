@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:tns="guihoso.bct.xsd.nsw_gateway.vn2bs.com"
+    targetNamespace="guihoso.bct.xsd.nsw_gateway.vn2bs.com"
+    elementFormDefault="qualified">
+
+    <xs:element name="GuiHoSoRequest">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="maSoHoSo" type="xs:string" />
+                <xs:element name="tenNguoiGui" type="xs:string" />
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="GuiHoSoResponse">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="maSoHoSo" type="xs:string" />
+                <xs:element name="ketQua" type="xs:string" />
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>

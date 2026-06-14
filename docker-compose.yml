@@ -86,7 +86,7 @@ services:
           memory: 512M
     environment:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: nsw-kafka:9092
-      SPRING_DATASOURCE_URL: jdbc:mysql://nsw-mysql:3306/nsw_adapter?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh
+      SPRING_DATASOURCE_URL: jdbc:mysql://nsw-mysql:3306/nsw_adapter?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
       MINIO_URL: http://minio:9000
     depends_on:
       - nsw-kafka
@@ -106,7 +106,7 @@ services:
           memory: 512M
     environment:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: nsw-kafka:9092
-      SPRING_DATASOURCE_URL: jdbc:mysql://nsw-mysql:3306/nsw_adapter?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh
+      SPRING_DATASOURCE_URL: jdbc:mysql://nsw-mysql:3306/nsw_adapter?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
       MINIO_URL: http://minio:9000
     depends_on:
       - nsw-kafka
@@ -125,7 +125,7 @@ services:
           cpus: '0.5'
           memory: 512M
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://bct-mysql:3306/bct_adapter?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh
+      SPRING_DATASOURCE_URL: jdbc:mysql://bct-mysql:3306/bct_adapter?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
     depends_on:
       - bct-mysql
 
@@ -141,7 +141,7 @@ services:
           cpus: '0.5'
           memory: 512M
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://bct-mysql:3306/bct_adapter?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh
+      SPRING_DATASOURCE_URL: jdbc:mysql://bct-mysql:3306/bct_adapter?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
     depends_on:
       - bct-mysql
 

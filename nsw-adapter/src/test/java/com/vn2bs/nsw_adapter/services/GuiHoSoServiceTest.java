@@ -17,12 +17,16 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.vn2bs.common.domains.Status;
 import com.vn2bs.common.domains.ThuTuc1.ThuTuc1_GuiHoSo;
 import com.vn2bs.common.repositories.ThuTuc1.ThuTuc1_GuiHoSoRepository;
+import com.vn2bs.nsw_adapter.client.BctGuiHoSoClient;
 
 @ExtendWith(MockitoExtension.class)
 class GuiHoSoServiceTest {
 
     @Mock
     private ThuTuc1_GuiHoSoRepository guiHoSoRepository;
+
+    @Mock
+    private BctGuiHoSoClient bctGuiHoSoClient;
 
     @InjectMocks
     private GuiHoSoService guiHoSoService;
@@ -42,6 +46,7 @@ class GuiHoSoServiceTest {
             savedStatuses.add(saved.getStatus());
             return saved;
         });
+        when(bctGuiHoSoClient.sendGuiHoSo("NSW-2026-0001", null)).thenReturn("success");
 
         guiHoSoService.process(entity);
 

@@ -11,6 +11,7 @@ Hệ thống tài liệu cho agent `senior-backend` và team dev.
 | [design/screens/](./design/screens/) | API response / screen specs | ❌ Read-only |
 | [prd/](./prd/) | Product requirements (link PRD gốc) | ❌ Read-only |
 | [postman/](./postman/) | Postman collections E2E | ✅ Có (task G3-T15) |
+| [AGENT_WORK_LOG.md](./AGENT_WORK_LOG.md) | Nhật ký công việc agent | ✅ Có |
 
 ## Bắt đầu nhanh
 

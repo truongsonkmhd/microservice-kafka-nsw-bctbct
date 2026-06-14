@@ -6,7 +6,7 @@
 //
 
 
-package com.vn2bs.nsw_gateway.xsd.byt.thutuc1;
+package com.vn2bs.nsw_gateway.xsd.bct.guihoso;
 
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
@@ -40,8 +40,8 @@ import jakarta.xml.bind.annotation.XmlType;
     "maSoHoSo",
     "ketQua"
 })
-@XmlRootElement(name = "TraLoiRequest")
-public class TraLoiRequest {
+@XmlRootElement(name = "GuiHoSoResponse")
+public class GuiHoSoResponse {
 
     @XmlElement(required = true)
     protected String maSoHoSo;

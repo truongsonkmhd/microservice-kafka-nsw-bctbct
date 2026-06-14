@@ -45,6 +45,23 @@ public class WebServiceConfiguration {
         return wsdl11Definition;
     }
 
+    @Bean(name = "bct-guihoso-schema")
+    @Qualifier("bct-guihoso-schema")
+    public XsdSchema BCT_GuiHoSo_schema() {
+        return new SimpleXsdSchema(new ClassPathResource("xsd/bct/guihoso.xsd"));
+    }
+
+    @Bean(name = "bct-thu-tuc-1-gui-ho-so")
+    public DefaultWsdl11Definition BCT_GuiHoSo_defaultWsdl11Definition(
+            @Qualifier("bct-guihoso-schema") XsdSchema schema) {
+        DefaultWsdl11Definition wsdl11Definition = new DefaultWsdl11Definition();
+        wsdl11Definition.setPortTypeName("GuiHoSo");
+        wsdl11Definition.setLocationUri("/web-services");
+        wsdl11Definition.setTargetNamespace("com.vn2bs.webservices.bct.guihoso");
+        wsdl11Definition.setSchema(schema);
+        return wsdl11Definition;
+    }
+
     @Bean(name = "bct-messages-schema")
     @Qualifier("bct-messages-schema")
     public XsdSchema BCT_Messages_schema() {

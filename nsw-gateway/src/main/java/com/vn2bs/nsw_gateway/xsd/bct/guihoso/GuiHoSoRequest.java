@@ -6,7 +6,7 @@
 //
 
 
-package com.vn2bs.nsw_gateway.xsd.byt.thutuc1;
+package com.vn2bs.nsw_gateway.xsd.bct.guihoso;
 
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
@@ -26,7 +26,7 @@ import jakarta.xml.bind.annotation.XmlType;
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType"&gt;
  *       &lt;sequence&gt;
  *         &lt;element name="maSoHoSo" type="{http://www.w3.org/2001/XMLSchema}string"/&gt;
- *         &lt;element name="ketQua" type="{http://www.w3.org/2001/XMLSchema}string"/&gt;
+ *         &lt;element name="tenNguoiGui" type="{http://www.w3.org/2001/XMLSchema}string"/&gt;
  *       &lt;/sequence&gt;
  *     &lt;/restriction&gt;
  *   &lt;/complexContent&gt;
@@ -38,15 +38,15 @@ import jakarta.xml.bind.annotation.XmlType;
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "", propOrder = {
     "maSoHoSo",
-    "ketQua"
+    "tenNguoiGui"
 })
-@XmlRootElement(name = "TraLoiRequest")
-public class TraLoiRequest {
+@XmlRootElement(name = "GuiHoSoRequest")
+public class GuiHoSoRequest {
 
     @XmlElement(required = true)
     protected String maSoHoSo;
     @XmlElement(required = true)
-    protected String ketQua;
+    protected String tenNguoiGui;
 
     /**
      * Gets the value of the maSoHoSo property.
@@ -73,27 +73,27 @@ public class TraLoiRequest {
     }
 
     /**
-     * Gets the value of the ketQua property.
+     * Gets the value of the tenNguoiGui property.
      * 
      * @return
      *     possible object is
      *     {@link String }
      *     
      */
-    public String getKetQua() {
-        return ketQua;
+    public String getTenNguoiGui() {
+        return tenNguoiGui;
     }
 
     /**
-     * Sets the value of the ketQua property.
+     * Sets the value of the tenNguoiGui property.
      * 
      * @param value
      *     allowed object is
      *     {@link String }
      *     
      */
-    public void setKetQua(String value) {
-        this.ketQua = value;
+    public void setTenNguoiGui(String value) {
+        this.tenNguoiGui = value;
     }
 
 }
