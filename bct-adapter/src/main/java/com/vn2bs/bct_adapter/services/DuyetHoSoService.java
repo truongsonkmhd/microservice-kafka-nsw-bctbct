@@ -40,7 +40,10 @@ public class DuyetHoSoService {
         guiHoSoRepository.save(hoSo);
 
         saveTraLoi(maSoHoSo, request.getKetQua(), null, request.getTenNguoiXuLy());
-        traLoiSender.send(maSoHoSo, request.getKetQua());
+        if (traLoiSender.send(maSoHoSo, request.getKetQua())) {
+            hoSo.setBusinessStatus(BusinessStatus.DA_GUI_KET_QUA);
+            guiHoSoRepository.save(hoSo);
+        }
 
         log.info("Duyet ho so maSoHoSo={} by {}", maSoHoSo, request.getTenNguoiXuLy());
     }
@@ -56,7 +59,10 @@ public class DuyetHoSoService {
 
         String ketQua = "Tu choi: " + request.getLyDo();
         saveTraLoi(maSoHoSo, ketQua, request.getLyDo(), request.getTenNguoiXuLy());
-        traLoiSender.send(maSoHoSo, ketQua);
+        if (traLoiSender.send(maSoHoSo, ketQua)) {
+            hoSo.setBusinessStatus(BusinessStatus.DA_GUI_KET_QUA);
+            guiHoSoRepository.save(hoSo);
+        }
 
         log.info("Tu choi ho so maSoHoSo={} by {} lyDo={}", maSoHoSo, request.getTenNguoiXuLy(), request.getLyDo());
     }

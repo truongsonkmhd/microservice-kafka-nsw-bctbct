@@ -6,6 +6,7 @@ public enum BusinessStatus {
     DA_XU_LY,
     CHO_PHE_DUYET,
     DA_PHE_DUYET,
+    DA_GUI_KET_QUA,
     TU_CHOI,
     DA_HUY
 }

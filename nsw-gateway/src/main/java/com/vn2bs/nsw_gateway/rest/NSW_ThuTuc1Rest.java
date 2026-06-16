@@ -8,6 +8,8 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -17,6 +19,8 @@ import org.springframework.web.multipart.MultipartFile;
 import com.vn2bs.common.dto.IResponse;
 import com.vn2bs.common.dto.ThuTuc1.GuiHoSoDto;
 import com.vn2bs.common.dto.ThuTuc1.GuiHoSoSubmitResponse;
+import com.vn2bs.common.dto.ThuTuc1.HoSoTraCuuResponse;
+import com.vn2bs.nsw_gateway.services.HoSoTraCuuService;
 import com.vn2bs.nsw_gateway.services.NSWMessageHandler;
 import com.vn2bs.nsw_gateway.validation.GuiHoSoValidator;
 
@@ -46,6 +50,26 @@ public class NSW_ThuTuc1Rest {
 
     @Autowired
     private GuiHoSoValidator guiHoSoValidator;
+
+    @Autowired
+    private HoSoTraCuuService hoSoTraCuuService;
+
+    @Operation(summary = "Tra cứu trạng thái hồ sơ theo mã số")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Thông tin hồ sơ",
+                    content = @Content(schema = @Schema(implementation = HoSoTraCuuResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Không tìm thấy hồ sơ")
+    })
+    @GetMapping("ho-so/{maSoHoSo}")
+    public ResponseEntity<IResponse<HoSoTraCuuResponse>> traCuu(@PathVariable String maSoHoSo) {
+        HoSoTraCuuResponse result = hoSoTraCuuService.traCuu(maSoHoSo);
+
+        IResponse<HoSoTraCuuResponse> body = new IResponse<>();
+        body.setStatus(HttpStatus.OK);
+        body.setMessage("Ok");
+        body.setData(result);
+        return ResponseEntity.ok(body);
+    }
 
     @Operation(
             summary = "Nộp hồ sơ ThuTuc1",

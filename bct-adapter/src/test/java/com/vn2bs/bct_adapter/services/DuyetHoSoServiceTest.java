@@ -51,10 +51,11 @@ class DuyetHoSoServiceTest {
 
         when(guiHoSoRepository.findByMaSoHoSo("NSW-2026-001")).thenReturn(Optional.of(hoSo));
         when(traLoiRepository.findByMaSoHoSo("NSW-2026-001")).thenReturn(Optional.empty());
+        when(traLoiSender.send("NSW-2026-001", "Phe duyet ho so")).thenReturn(true);
 
         duyetHoSoService.duyet("NSW-2026-001", request);
 
-        assertEquals(BusinessStatus.DA_XU_LY, hoSo.getBusinessStatus());
+        assertEquals(BusinessStatus.DA_GUI_KET_QUA, hoSo.getBusinessStatus());
         verify(traLoiRepository).save(any(ThuTuc1_TraLoi.class));
         verify(traLoiSender).send("NSW-2026-001", "Phe duyet ho so");
     }
@@ -95,10 +96,11 @@ class DuyetHoSoServiceTest {
 
         when(guiHoSoRepository.findByMaSoHoSo("NSW-2026-001")).thenReturn(Optional.of(hoSo));
         when(traLoiRepository.findByMaSoHoSo("NSW-2026-001")).thenReturn(Optional.empty());
+        when(traLoiSender.send("NSW-2026-001", "Tu choi: Thieu giay to")).thenReturn(true);
 
         duyetHoSoService.tuChoi("NSW-2026-001", request);
 
-        assertEquals(BusinessStatus.DA_XU_LY, hoSo.getBusinessStatus());
+        assertEquals(BusinessStatus.DA_GUI_KET_QUA, hoSo.getBusinessStatus());
         verify(traLoiSender).send("NSW-2026-001", "Tu choi: Thieu giay to");
     }
 }

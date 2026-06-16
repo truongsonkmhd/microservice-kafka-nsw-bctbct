@@ -6,7 +6,7 @@
 //
 
 
-package com.vn2bs.nsw_gateway.xsd.bct.guihoso;
+package com.vn2bs.bct_adapter.xsd.bct.thutuc1;
 
 import jakarta.xml.bind.annotation.XmlRegistry;
 
@@ -14,7 +14,7 @@ import jakarta.xml.bind.annotation.XmlRegistry;
 /**
  * This object contains factory methods for each 
  * Java content interface and Java element interface 
- * generated in the com.vn2bs.nsw_gateway.xsd.bct.guihoso package. 
+ * generated in the com.vn2bs.bct_adapter.xsd.bct.thutuc1 package. 
  * <p>An ObjectFactory allows you to programatically 
  * construct new instances of the Java representation 
  * for XML content. The Java representation of XML 
@@ -30,26 +30,26 @@ public class ObjectFactory {
 
 
     /**
-     * Create a new ObjectFactory that can be used to create new instances of schema derived classes for package: com.vn2bs.nsw_gateway.xsd.bct.guihoso
+     * Create a new ObjectFactory that can be used to create new instances of schema derived classes for package: com.vn2bs.bct_adapter.xsd.bct.thutuc1
      * 
      */
     public ObjectFactory() {
     }
 
     /**
-     * Create an instance of {@link GuiHoSoRequest }
+     * Create an instance of {@link TraLoiRequest }
      * 
      */
-    public GuiHoSoRequest createGuiHoSoRequest() {
-        return new GuiHoSoRequest();
+    public TraLoiRequest createTraLoiRequest() {
+        return new TraLoiRequest();
     }
 
     /**
-     * Create an instance of {@link GuiHoSoResponse }
+     * Create an instance of {@link TraLoiResponse }
      * 
      */
-    public GuiHoSoResponse createGuiHoSoResponse() {
-        return new GuiHoSoResponse();
+    public TraLoiResponse createTraLoiResponse() {
+        return new TraLoiResponse();
     }
 
 }

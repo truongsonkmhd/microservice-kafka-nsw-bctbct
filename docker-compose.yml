@@ -108,26 +108,34 @@ services:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: nsw-kafka:9092
       SPRING_DATASOURCE_URL: jdbc:mysql://nsw-mysql:3306/nsw_adapter?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
       MINIO_URL: http://minio:9000
+      BCT_SOAP_URL: http://bct-gateway:8082/web-services
     depends_on:
       - nsw-kafka
       - nsw-mysql
       - minio
+      - bct-gateway
 
   bct-gateway:
     build:
       context: .
       dockerfile: bct-gateway/Dockerfile
     restart: unless-stopped
+    ports:
+      - "8082:8082"
     deploy:
-      replicas: 2
+      replicas: 1
       resources:
         limits:
           cpus: '0.5'
           memory: 512M
     environment:
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: bct-kafka:9092
       SPRING_DATASOURCE_URL: jdbc:mysql://bct-mysql:3306/bct_adapter?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
+      MINIO_URL: http://minio:9000
     depends_on:
+      - bct-kafka
       - bct-mysql
+      - minio
 
   bct-adapter:
     build:
@@ -141,9 +149,14 @@ services:
           cpus: '0.5'
           memory: 512M
     environment:
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: bct-kafka:9092
       SPRING_DATASOURCE_URL: jdbc:mysql://bct-mysql:3306/bct_adapter?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
+      MINIO_URL: http://minio:9000
+      NSW_SOAP_URL: http://nsw-gateway:8084/web-services
     depends_on:
+      - bct-kafka
       - bct-mysql
+      - minio
 
   # Reverse Proxy
   nginx:

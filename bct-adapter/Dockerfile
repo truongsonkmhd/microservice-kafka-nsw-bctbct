@@ -9,5 +9,5 @@ RUN mvn install -N -DskipTests && \
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app
-COPY --from=build /app/bct-adapter/target/*.jar app.jar
+COPY --from=build /app/bct-adapter/target/bct-adapter-0.0.1-SNAPSHOT.jar app.jar
 ENTRYPOINT ["java", "-jar", "app.jar"]
