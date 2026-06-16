@@ -3,7 +3,9 @@ WORKDIR /app
 COPY pom.xml .
 COPY common common
 COPY bct-adapter bct-adapter
-RUN mvn clean package -pl bct-adapter -am -DskipTests
+RUN mvn install -N -DskipTests && \
+    mvn -f common/pom.xml install -DskipTests && \
+    mvn -f bct-adapter/pom.xml clean package -DskipTests
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app

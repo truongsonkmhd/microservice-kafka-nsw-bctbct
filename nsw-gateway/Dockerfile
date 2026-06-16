@@ -3,7 +3,9 @@ WORKDIR /app
 COPY pom.xml .
 COPY common common
 COPY nsw-gateway nsw-gateway
-RUN mvn clean package -pl nsw-gateway -am -DskipTests
+RUN mvn install -N -DskipTests && \
+    mvn -f common/pom.xml install -DskipTests && \
+    mvn -f nsw-gateway/pom.xml clean package -DskipTests
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app
