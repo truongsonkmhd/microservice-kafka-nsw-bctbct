@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Unit tests
+        run: >
+          mvn -pl common,nsw-gateway,nsw-adapter,bct-gateway,bct-adapter
+          -am clean verify -DskipTests=false
+
+      - name: Integration tests (Testcontainers)
+        run: >
+          mvn -pl nsw-gateway -am clean verify -DskipTests=false -Pintegration
+
+  docker-compose-config:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate docker-compose
+        run: docker compose config --quiet

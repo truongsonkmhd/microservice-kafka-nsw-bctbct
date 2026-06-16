@@ -19,6 +19,7 @@ import com.vn2bs.common.domains.ThuTuc1.ThuTuc1_GuiHoSo;
 import com.vn2bs.common.dto.ThuTuc1.GuiHoSoDto;
 import com.vn2bs.common.dto.ThuTuc1.GuiHoSoSubmitResponse;
 import com.vn2bs.common.repositories.ThuTuc1.ThuTuc1_GuiHoSoRepository;
+import com.vn2bs.common.metrics.GatewayMetrics;
 import com.vn2bs.common.services.MessageLogService;
 import com.vn2bs.common.services.OutboxService;
 import com.vn2bs.common.utils.CorrelationIdSupport;
@@ -59,6 +60,9 @@ public class NSWMessageHandler {
 
     @Autowired
     private OutboxService outboxService;
+
+    @Autowired
+    private GatewayMetrics gatewayMetrics;
 
     @Transactional
     public GuiHoSoSubmitResponse ThuTuc1_GuiHoSo(GuiHoSoDto message, List<MultipartFile> tepDinhKem)
@@ -118,6 +122,8 @@ public class NSWMessageHandler {
                 entity,
                 "ThuTuc1_GuiHoSo",
                 entity.getMaSoHoSo());
+
+        gatewayMetrics.recordMessage("nsw-gateway", MessageType.GUI_HO_SO.name(), "outbound");
 
         GuiHoSoSubmitResponse response = new GuiHoSoSubmitResponse();
         response.setMaSoHoSo(entity.getMaSoHoSo());

@@ -442,3 +442,55 @@ Chạy theo thứ tự folder **0 → 4** hoặc dùng **Collection Runner**. Ch
 | List BCT rỗng | Kafka chưa consume | Đợi 15s; kiểm tra nsw-adapter + bct-adapter log |
 | `No enum constant CHO_XU_LY` | Chạy bản cũ chưa rebuild | `mvn clean install` rồi restart app |
 | `businessStatus must be CHO_XU_LY` | Duyệt khi hồ sơ chưa CHO_XU_LY | Gửi hồ sơ mới hoặc đợi adapter consume |
+
+---
+
+## 7. Giai đoạn 5 — Vận hành & Bàn giao (R5)
+
+### 7.1. Kiểm thử
+
+```bash
+# Unit tests (mặc định bỏ qua @Tag("integration"))
+mvn -pl common,nsw-gateway,nsw-adapter,bct-gateway,bct-adapter -am verify -DskipTests=false
+
+# Integration test Testcontainers (cần Docker)
+mvn -pl nsw-gateway -am verify -DskipTests=false -Pintegration
+
+# SOAP contract test
+mvn -pl nsw-gateway test -DskipTests=false -Dtest=SoapContractTest
+```
+
+### 7.2. Docker full stack
+
+```bash
+docker compose up -d --build
+./scripts/e2e-demo.sh
+```
+
+Nginx reverse proxy: `http://localhost/nsw-gateway/`, `http://localhost/bct-adapter/`, ...
+
+### 7.3. Observability
+
+| Endpoint | Mô tả |
+|----------|-------|
+| `/actuator/health` | Health check |
+| `/actuator/prometheus` | Metrics (Micrometer) |
+| Header `X-Trace-Id` | Distributed trace ID (REST) |
+
+Metrics tùy chỉnh: `gateway.messages.total`, `gateway.errors.total` (tag: module, type).
+
+Grafana dashboard mẫu: `infra/grafana/nsw-bct-gateway-dashboard.json`.
+
+### 7.4. CI/CD
+
+GitHub Actions: `.github/workflows/ci.yml` — build + unit test + integration test on PR/push.
+
+### 7.5. Tài liệu bàn giao
+
+| Tài liệu | Đường dẫn |
+|----------|-----------|
+| Runbook vận hành | `docs/RUNBOOK.md` |
+| UAT checklist | `docs/test/UAT-CHECKLIST.md` |
+| Release notes R3/R4/R5 | `docs/RELEASE-NOTES.md` |
+| Performance smoke | `./scripts/g5-perf-smoke.sh` |
+

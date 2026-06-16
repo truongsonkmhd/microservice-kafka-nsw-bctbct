@@ -1,7 +1,13 @@
 version: '3.8'
 
+x-app-env: &app-g4-env
+  OUTBOX_PUBLISHER_ENABLED: "true"
+  OUTBOX_PUBLISH_INTERVAL_MS: "5000"
+  MINIO_ORPHAN_CLEANUP_ENABLED: "true"
+  MINIO_USERNAME: minioadmin
+  MINIO_PASSWORD: minioadmin
+
 services:
-  # Infrastructure
   nsw-kafka:
     image: apache/kafka
     container_name: nsw-kafka
@@ -20,6 +26,12 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_NUM_PARTITIONS: 3
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 9092 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
   bct-kafka:
     image: apache/kafka
@@ -39,9 +51,15 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_NUM_PARTITIONS: 3
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 9092 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
   nsw-mysql:
-    image: mysql
+    image: mysql:8.0
     container_name: nsw-mysql
     restart: unless-stopped
     environment:
@@ -49,9 +67,15 @@ services:
       MYSQL_DATABASE: nsw_adapter
     ports:
       - "3316:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-prootpassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
   bct-mysql:
-    image: mysql
+    image: mysql:8.0
     container_name: bct-mysql
     restart: unless-stopped
     environment:
@@ -59,6 +83,12 @@ services:
       MYSQL_DATABASE: bct_adapter
     ports:
       - "3326:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-prootpassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
   minio:
     image: minio/minio
@@ -71,49 +101,12 @@ services:
       - "9000:9000"
       - "9001:9001"
     command: server /data --console-address ":9001"
-
-  # Applications
-  nsw-gateway:
-    build:
-      context: .
-      dockerfile: nsw-gateway/Dockerfile
-    restart: unless-stopped
-    deploy:
-      replicas: 2
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
-    environment:
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: nsw-kafka:9092
-      SPRING_DATASOURCE_URL: jdbc:mysql://nsw-mysql:3306/nsw_adapter?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
-      MINIO_URL: http://minio:9000
-    depends_on:
-      - nsw-kafka
-      - nsw-mysql
-      - minio
-
-  nsw-adapter:
-    build:
-      context: .
-      dockerfile: nsw-adapter/Dockerfile
-    restart: unless-stopped
-    deploy:
-      replicas: 2
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
-    environment:
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: nsw-kafka:9092
-      SPRING_DATASOURCE_URL: jdbc:mysql://nsw-mysql:3306/nsw_adapter?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
-      MINIO_URL: http://minio:9000
-      BCT_SOAP_URL: http://bct-gateway:8082/web-services
-    depends_on:
-      - nsw-kafka
-      - nsw-mysql
-      - minio
-      - bct-gateway
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
 
   bct-gateway:
     build:
@@ -122,43 +115,93 @@ services:
     restart: unless-stopped
     ports:
       - "8082:8082"
-    deploy:
-      replicas: 1
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
     environment:
+      <<: *app-g4-env
       SPRING_KAFKA_BOOTSTRAP_SERVERS: bct-kafka:9092
       SPRING_DATASOURCE_URL: jdbc:mysql://bct-mysql:3306/bct_adapter?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: rootpassword
       MINIO_URL: http://minio:9000
     depends_on:
-      - bct-kafka
-      - bct-mysql
-      - minio
+      bct-kafka:
+        condition: service_healthy
+      bct-mysql:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+  nsw-gateway:
+    build:
+      context: .
+      dockerfile: nsw-gateway/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8084:8084"
+    environment:
+      <<: *app-g4-env
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: nsw-kafka:9092
+      SPRING_DATASOURCE_URL: jdbc:mysql://nsw-mysql:3306/nsw_adapter?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: rootpassword
+      MINIO_URL: http://minio:9000
+    depends_on:
+      nsw-kafka:
+        condition: service_healthy
+      nsw-mysql:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+  nsw-adapter:
+    build:
+      context: .
+      dockerfile: nsw-adapter/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8083:8083"
+    environment:
+      <<: *app-g4-env
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: nsw-kafka:9092
+      SPRING_DATASOURCE_URL: jdbc:mysql://nsw-mysql:3306/nsw_adapter?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: rootpassword
+      MINIO_URL: http://minio:9000
+      BCT_SOAP_URL: http://bct-gateway:8082/web-services
+    depends_on:
+      nsw-kafka:
+        condition: service_healthy
+      nsw-mysql:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      bct-gateway:
+        condition: service_started
 
   bct-adapter:
     build:
       context: .
       dockerfile: bct-adapter/Dockerfile
     restart: unless-stopped
-    deploy:
-      replicas: 2
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
+    ports:
+      - "8085:8085"
     environment:
+      <<: *app-g4-env
       SPRING_KAFKA_BOOTSTRAP_SERVERS: bct-kafka:9092
       SPRING_DATASOURCE_URL: jdbc:mysql://bct-mysql:3306/bct_adapter?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: rootpassword
       MINIO_URL: http://minio:9000
       NSW_SOAP_URL: http://nsw-gateway:8084/web-services
     depends_on:
-      - bct-kafka
-      - bct-mysql
-      - minio
+      bct-kafka:
+        condition: service_healthy
+      bct-mysql:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      nsw-gateway:
+        condition: service_started
 
-  # Reverse Proxy
   nginx:
     image: nginx:latest
     container_name: nginx
