@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -38,10 +37,10 @@ class BctGuiHoSoClientTest {
         response.setMaSoHoSo("NSW-2026-0001");
         response.setKetQua("success");
 
-        when(webServiceTemplate.marshalSendAndReceive(anyString(), any(GuiHoSoRequest.class)))
+        when(webServiceTemplate.marshalSendAndReceive(anyString(), any(GuiHoSoRequest.class), any()))
                 .thenReturn(response);
 
-        String result = client.sendGuiHoSo("NSW-2026-0001", "Cong ty ABC");
+        String result = client.sendGuiHoSo("NSW-2026-0001", "Cong ty ABC", "cid-1");
 
         assertEquals("success", result);
     }
@@ -52,10 +51,10 @@ class BctGuiHoSoClientTest {
         response.setMaSoHoSo("NSW-2026-0001");
         response.setKetQua("error");
 
-        when(webServiceTemplate.marshalSendAndReceive(anyString(), any(GuiHoSoRequest.class)))
+        when(webServiceTemplate.marshalSendAndReceive(anyString(), any(GuiHoSoRequest.class), any()))
                 .thenReturn(response);
 
         assertThrows(IllegalStateException.class,
-                () -> client.sendGuiHoSo("NSW-2026-0001", "Cong ty ABC"));
+                () -> client.sendGuiHoSo("NSW-2026-0001", "Cong ty ABC", "cid-1"));
     }
 }

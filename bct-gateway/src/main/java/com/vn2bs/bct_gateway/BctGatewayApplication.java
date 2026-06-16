@@ -5,9 +5,11 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.persistence.autoconfigure.EntityScan;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication(scanBasePackages = { "com.vn2bs.common", "com.vn2bs.bct_gateway" })
 @EnableJpaAuditing
+@EnableScheduling
 @EntityScan(basePackages = { "com.vn2bs.common.domains" })
 @EnableJpaRepositories(basePackages = { "com.vn2bs.common.repositories" })
 public class BctGatewayApplication {

@@ -14,6 +14,8 @@ import com.vn2bs.common.domains.ThuTuc1.ThuTuc1_GuiHoSo;
 import com.vn2bs.common.domains.ThuTuc1.ThuTuc1_TraLoi;
 import com.vn2bs.common.repositories.ThuTuc1.ThuTuc1_GuiHoSoRepository;
 import com.vn2bs.common.repositories.ThuTuc1.ThuTuc1_TraLoiRepository;
+import com.vn2bs.common.services.BusinessStatusValidator;
+import com.vn2bs.common.utils.CorrelationIdSupport;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -30,17 +32,22 @@ public class DuyetHoSoService {
     @Autowired
     private TraLoiSender traLoiSender;
 
+    @Autowired
+    private BusinessStatusValidator businessStatusValidator;
+
     public void duyet(String maSoHoSo, DuyetRequest request) {
         validateDuyetRequest(request);
         ThuTuc1_GuiHoSo hoSo = findHoSoOrThrow(maSoHoSo);
         assertChoXuLy(hoSo);
 
+        businessStatusValidator.validateTransition(hoSo.getBusinessStatus(), BusinessStatus.DA_XU_LY);
         hoSo.setBusinessStatus(BusinessStatus.DA_XU_LY);
         hoSo.setStatus(Status.COMPLETED);
         guiHoSoRepository.save(hoSo);
 
-        saveTraLoi(maSoHoSo, request.getKetQua(), null, request.getTenNguoiXuLy());
-        if (traLoiSender.send(maSoHoSo, request.getKetQua())) {
+        String correlationId = CorrelationIdSupport.generate();
+        saveTraLoi(maSoHoSo, request.getKetQua(), null, request.getTenNguoiXuLy(), correlationId);
+        if (traLoiSender.send(maSoHoSo, request.getKetQua(), correlationId)) {
             hoSo.setBusinessStatus(BusinessStatus.DA_GUI_KET_QUA);
             guiHoSoRepository.save(hoSo);
         }
@@ -53,13 +60,15 @@ public class DuyetHoSoService {
         ThuTuc1_GuiHoSo hoSo = findHoSoOrThrow(maSoHoSo);
         assertChoXuLy(hoSo);
 
+        businessStatusValidator.validateTransition(hoSo.getBusinessStatus(), BusinessStatus.DA_XU_LY);
         hoSo.setBusinessStatus(BusinessStatus.DA_XU_LY);
         hoSo.setStatus(Status.COMPLETED);
         guiHoSoRepository.save(hoSo);
 
         String ketQua = "Tu choi: " + request.getLyDo();
-        saveTraLoi(maSoHoSo, ketQua, request.getLyDo(), request.getTenNguoiXuLy());
-        if (traLoiSender.send(maSoHoSo, ketQua)) {
+        String correlationId = CorrelationIdSupport.generate();
+        saveTraLoi(maSoHoSo, ketQua, request.getLyDo(), request.getTenNguoiXuLy(), correlationId);
+        if (traLoiSender.send(maSoHoSo, ketQua, correlationId)) {
             hoSo.setBusinessStatus(BusinessStatus.DA_GUI_KET_QUA);
             guiHoSoRepository.save(hoSo);
         }
@@ -67,12 +76,42 @@ public class DuyetHoSoService {
         log.info("Tu choi ho so maSoHoSo={} by {} lyDo={}", maSoHoSo, request.getTenNguoiXuLy(), request.getLyDo());
     }
 
-    private void saveTraLoi(String maSoHoSo, String ketQua, String lyDo, String tenNguoiXuLy) {
+    public boolean replayTraLoi(String maSoHoSo) {
+        ThuTuc1_GuiHoSo hoSo = findHoSoOrThrow(maSoHoSo);
+        if (hoSo.getBusinessStatus() != BusinessStatus.DA_XU_LY
+                && hoSo.getBusinessStatus() != BusinessStatus.DA_GUI_KET_QUA) {
+            throw new BusinessException(
+                    HttpStatus.CONFLICT,
+                    "INVALID_STATUS",
+                    "Replay only for DA_XU_LY or DA_GUI_KET_QUA, current: " + hoSo.getBusinessStatus());
+        }
+
+        ThuTuc1_TraLoi traLoi = traLoiRepository.findByMaSoHoSo(maSoHoSo)
+                .orElseThrow(() -> new BusinessException(
+                        HttpStatus.NOT_FOUND,
+                        "TRA_LOI_NOT_FOUND",
+                        "TraLoi record not found: " + maSoHoSo));
+
+        String correlationId = CorrelationIdSupport.generate();
+        traLoi.setCorrelationId(correlationId);
+        traLoiRepository.save(traLoi);
+
+        boolean sent = traLoiSender.send(maSoHoSo, traLoi.getKetQua(), correlationId);
+        if (sent) {
+            hoSo.setBusinessStatus(BusinessStatus.DA_GUI_KET_QUA);
+            guiHoSoRepository.save(hoSo);
+        }
+        log.info("Replay TraLoi maSoHoSo={} sent={}", maSoHoSo, sent);
+        return sent;
+    }
+
+    private void saveTraLoi(String maSoHoSo, String ketQua, String lyDo, String tenNguoiXuLy, String correlationId) {
         ThuTuc1_TraLoi traLoi = traLoiRepository.findByMaSoHoSo(maSoHoSo).orElse(new ThuTuc1_TraLoi());
         traLoi.setMaSoHoSo(maSoHoSo);
         traLoi.setKetQua(ketQua);
         traLoi.setLyDo(lyDo);
         traLoi.setTenNguoiXuLy(tenNguoiXuLy);
+        traLoi.setCorrelationId(correlationId);
         traLoi.setStatus(Status.COMPLETED);
         traLoiRepository.save(traLoi);
     }

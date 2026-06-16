@@ -3,6 +3,8 @@ package com.vn2bs.bct_adapter.services;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -23,6 +25,7 @@ import com.vn2bs.common.domains.ThuTuc1.ThuTuc1_GuiHoSo;
 import com.vn2bs.common.domains.ThuTuc1.ThuTuc1_TraLoi;
 import com.vn2bs.common.repositories.ThuTuc1.ThuTuc1_GuiHoSoRepository;
 import com.vn2bs.common.repositories.ThuTuc1.ThuTuc1_TraLoiRepository;
+import com.vn2bs.common.services.BusinessStatusValidator;
 
 @ExtendWith(MockitoExtension.class)
 class DuyetHoSoServiceTest {
@@ -35,6 +38,9 @@ class DuyetHoSoServiceTest {
 
     @Mock
     private TraLoiSender traLoiSender;
+
+    @Mock
+    private BusinessStatusValidator businessStatusValidator;
 
     @InjectMocks
     private DuyetHoSoService duyetHoSoService;
@@ -51,13 +57,13 @@ class DuyetHoSoServiceTest {
 
         when(guiHoSoRepository.findByMaSoHoSo("NSW-2026-001")).thenReturn(Optional.of(hoSo));
         when(traLoiRepository.findByMaSoHoSo("NSW-2026-001")).thenReturn(Optional.empty());
-        when(traLoiSender.send("NSW-2026-001", "Phe duyet ho so")).thenReturn(true);
+        when(traLoiSender.send(eq("NSW-2026-001"), eq("Phe duyet ho so"), anyString())).thenReturn(true);
 
         duyetHoSoService.duyet("NSW-2026-001", request);
 
         assertEquals(BusinessStatus.DA_GUI_KET_QUA, hoSo.getBusinessStatus());
         verify(traLoiRepository).save(any(ThuTuc1_TraLoi.class));
-        verify(traLoiSender).send("NSW-2026-001", "Phe duyet ho so");
+        verify(traLoiSender).send(eq("NSW-2026-001"), eq("Phe duyet ho so"), anyString());
     }
 
     @Test
@@ -96,11 +102,11 @@ class DuyetHoSoServiceTest {
 
         when(guiHoSoRepository.findByMaSoHoSo("NSW-2026-001")).thenReturn(Optional.of(hoSo));
         when(traLoiRepository.findByMaSoHoSo("NSW-2026-001")).thenReturn(Optional.empty());
-        when(traLoiSender.send("NSW-2026-001", "Tu choi: Thieu giay to")).thenReturn(true);
+        when(traLoiSender.send(eq("NSW-2026-001"), eq("Tu choi: Thieu giay to"), anyString())).thenReturn(true);
 
         duyetHoSoService.tuChoi("NSW-2026-001", request);
 
         assertEquals(BusinessStatus.DA_GUI_KET_QUA, hoSo.getBusinessStatus());
-        verify(traLoiSender).send("NSW-2026-001", "Tu choi: Thieu giay to");
+        verify(traLoiSender).send(eq("NSW-2026-001"), eq("Tu choi: Thieu giay to"), anyString());
     }
 }

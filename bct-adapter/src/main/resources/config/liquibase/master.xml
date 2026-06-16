@@ -6,4 +6,6 @@
 
     <include file="classpath:config/liquibase/changelog/20260613-guihoso-v2.xml"/>
     <include file="classpath:config/liquibase/changelog/20260614-business-status-enum.xml"/>
+    <include file="classpath:config/liquibase/changelog/20260615-message-log.xml"/>
+    <include file="classpath:config/liquibase/changelog/20260616-outbox-event.xml"/>
 </databaseChangeLog>

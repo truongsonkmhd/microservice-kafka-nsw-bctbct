@@ -1,19 +1,24 @@
 package com.vn2bs.bct_gateway.services;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.vn2bs.bct_gateway.mapper.ThuTuc1.GuiHoSoMapper;
 import com.vn2bs.bct_gateway.xsd.bct.guihoso.GuiHoSoRequest;
 import com.vn2bs.bct_gateway.xsd.bct.guihoso.GuiHoSoResponse;
 import com.vn2bs.common.config.GlobalConfig;
 import com.vn2bs.common.domains.BusinessStatus;
+import com.vn2bs.common.domains.MessageParty;
+import com.vn2bs.common.domains.MessageType;
 import com.vn2bs.common.domains.Status;
 import com.vn2bs.common.domains.ThuTuc1.ThuTuc1_GuiHoSo;
 import com.vn2bs.common.dto.ThuTuc1.GuiHoSoDto;
 import com.vn2bs.common.repositories.ThuTuc1.ThuTuc1_GuiHoSoRepository;
+import com.vn2bs.common.services.MessageLogService;
+import com.vn2bs.common.services.OutboxService;
 import com.vn2bs.common.utils.NameUtil;
+import com.vn2bs.common.ws.MessageContextSupport;
 
 import io.minio.BucketExistsArgs;
 import io.minio.MakeBucketArgs;
@@ -37,12 +42,26 @@ public class BCTReceiveHandler {
     private GuiHoSoMapper guiHoSoMapper;
 
     @Autowired
-    private KafkaTemplate<String, ThuTuc1_GuiHoSo> kafkaTemplate;
+    private MessageLogService messageLogService;
 
+    @Autowired
+    private OutboxService outboxService;
+
+    @Transactional
     public GuiHoSoResponse receiveSoap(GuiHoSoRequest request) {
         validateSoapRequest(request);
-        log.info("BCT receive GuiHoSo SOAP maSoHoSo={} tenNguoiGui={}",
-                request.getMaSoHoSo(), request.getTenNguoiGui());
+        String correlationId = MessageContextSupport.correlationId();
+        String payloadXml = MessageContextSupport.payloadXml();
+        log.info("BCT receive GuiHoSo SOAP maSoHoSo={} correlationId={}",
+                request.getMaSoHoSo(), correlationId);
+
+        messageLogService.logReceived(
+                correlationId,
+                MessageParty.NSW,
+                MessageParty.BCT,
+                MessageType.GUI_HO_SO,
+                payloadXml,
+                request.getMaSoHoSo());
 
         if (guiHoSoRepository.findByMaSoHoSo(request.getMaSoHoSo()).isPresent()) {
             log.warn("GuiHoSo already exists maSoHoSo={} — idempotent ack", request.getMaSoHoSo());
@@ -52,6 +71,7 @@ public class BCTReceiveHandler {
         ThuTuc1_GuiHoSo entity = guiHoSoMapper.fromSoapRequestToEntity(request);
         entity.setStatus(Status.CREATED);
         entity.setBusinessStatus(BusinessStatus.KHOI_TAO);
+        entity.setCorrelationId(correlationId);
 
         final String bucketName = NameUtil.toBucketNameSafe(BUCKET_PREFIX, request.getMaSoHoSo());
         entity.setBucketName(bucketName);
@@ -60,11 +80,12 @@ public class BCTReceiveHandler {
         entity = guiHoSoRepository.save(entity);
         log.info("Saved BCT GuiHoSo entity: id={} maSoHoSo={}", entity.getId(), entity.getMaSoHoSo());
 
-        publishToKafka(entity);
+        enqueueGuiHoSo(entity);
 
         return buildAck(entity.getMaSoHoSo());
     }
 
+    @Transactional
     public GuiHoSoResponse receiveRest(GuiHoSoDto dto) {
         validateDto(dto);
         log.info("BCT receive GuiHoSo REST maSoHoSo={} tenNguoiGui={}",
@@ -86,17 +107,25 @@ public class BCTReceiveHandler {
         entity = guiHoSoRepository.save(entity);
         log.info("Saved BCT GuiHoSo entity: id={} maSoHoSo={}", entity.getId(), entity.getMaSoHoSo());
 
-        publishToKafka(entity);
+        enqueueGuiHoSo(entity);
 
         return buildAck(entity.getMaSoHoSo());
     }
 
-    private void publishToKafka(ThuTuc1_GuiHoSo entity) {
-        try {
-            kafkaTemplate.send(GlobalConfig.Kafka.Topic.BCT.ThuTuc1.GUI_HO_SO, entity);
-        } catch (Exception ex) {
-            log.error("Error sending GuiHoSo to Kafka id={} error={}", entity.getId(), ex.getMessage());
-        }
+    private void enqueueGuiHoSo(ThuTuc1_GuiHoSo entity) {
+        outboxService.enqueueObject(
+                GlobalConfig.Kafka.Topic.BCT.ThuTuc1.GUI_HO_SO,
+                GlobalConfig.Kafka.Topic.BCT.ThuTuc1.GUI_HO_SO_DLQ,
+                entity,
+                "ThuTuc1_GuiHoSo",
+                entity.getMaSoHoSo());
+        messageLogService.logSent(
+                entity.getCorrelationId(),
+                MessageParty.BCT,
+                MessageParty.BCT,
+                MessageType.GUI_HO_SO,
+                null,
+                entity.getMaSoHoSo());
     }
 
     private void ensureBucket(String bucketName) {

@@ -1,0 +1,198 @@
+{
+  "info": {
+    "_postman_id": "nsw-bct-e2e-g3-t15",
+    "name": "NSW ↔ BCT E2E (ThuTuc1)",
+    "description": "Collection demo luồng end-to-end G3: nộp hồ sơ NSW → duyệt BCT → tra cứu kết quả.\n\n**Yêu cầu:** 4 service + Docker infra đang chạy (xem README §6).\n\n**Thứ tự:** chạy folder theo số thứ tự, hoặc dùng Collection Runner.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "nsw_gw", "value": "http://localhost:8084" },
+    { "key": "nsw_ad", "value": "http://localhost:8083" },
+    { "key": "bct_gw", "value": "http://localhost:8082" },
+    { "key": "bct_ad", "value": "http://localhost:8085" },
+    { "key": "maSoHoSo", "value": "" },
+    { "key": "tenNguoiGui", "value": "Cong ty ABC Demo" }
+  ],
+  "item": [
+    {
+      "name": "0. Health check",
+      "item": [
+        {
+          "name": "nsw-gateway health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{nsw_gw}}/actuator/health"
+          }
+        },
+        {
+          "name": "nsw-adapter health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{nsw_ad}}/actuator/health"
+          }
+        },
+        {
+          "name": "bct-gateway health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{bct_gw}}/actuator/health"
+          }
+        },
+        {
+          "name": "bct-adapter health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{bct_ad}}/actuator/health"
+          }
+        }
+      ]
+    },
+    {
+      "name": "1. Nộp hồ sơ (NSW Gateway)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+              "var body = pm.response.json();",
+              "pm.test('có maSoHoSo', function () { pm.expect(body.data.maSoHoSo).to.be.a('string'); });",
+              "pm.collectionVariables.set('maSoHoSo', body.data.maSoHoSo);",
+              "console.log('maSoHoSo=' + body.data.maSoHoSo);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "thongTin",
+              "value": "{\"tenNguoiGui\":\"{{tenNguoiGui}}\"}",
+              "type": "text",
+              "contentType": "application/json"
+            }
+          ]
+        },
+        "url": "{{nsw_gw}}/nsw/thu-tuc-1/gui-ho-so",
+        "description": "Multipart: thongTin (JSON GuiHoSoDto). maSoHoSo tự sinh nếu không gửi."
+      }
+    },
+    {
+      "name": "2. Danh sách CHO_XU_LY (BCT Adapter)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+              "var ma = pm.collectionVariables.get('maSoHoSo');",
+              "if (ma) {",
+              "  pm.test('có hồ sơ ' + ma, function () {",
+              "    pm.expect(pm.response.text()).to.include(ma);",
+              "  });",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{bct_ad}}/bct/thu-tuc-1/ho-so?status=CHO_XU_LY",
+          "host": ["{{bct_ad}}"],
+          "path": ["bct", "thu-tuc-1", "ho-so"],
+          "query": [{ "key": "status", "value": "CHO_XU_LY" }]
+        },
+        "description": "Chờ ~15s sau bước 1 để NSW→BCT và Kafka consume xong trước khi gọi."
+      }
+    },
+    {
+      "name": "3. Duyệt hồ sơ (BCT Adapter)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tenNguoiXuLy\": \"Can bo A\",\n  \"ketQua\": \"Phe duyet ho so thanh cong. Du dieu kien thong quan.\"\n}"
+        },
+        "url": "{{bct_ad}}/bct/thu-tuc-1/ho-so/{{maSoHoSo}}/duyet",
+        "description": "Gửi TraLoi SOAP về NSW; cập nhật businessStatus BCT → DA_GUI_KET_QUA."
+      }
+    },
+    {
+      "name": "4. Tra cứu kết quả (NSW Gateway)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+              "var body = pm.response.json();",
+              "pm.test('businessStatus DA_PHE_DUYET', function () {",
+              "  pm.expect(body.data.businessStatus).to.eql('DA_PHE_DUYET');",
+              "});",
+              "pm.test('có ketQua', function () {",
+              "  pm.expect(body.data.ketQua).to.be.a('string');",
+              "});"
+            ],
+            "type":S "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{nsw_gw}}/nsw/thu-tuc-1/ho-so/{{maSoHoSo}}",
+        "description": "Chờ ~5s sau bước 3 để nsw-adapter xử lý TraLoi Kafka."
+      }
+    },
+    {
+      "name": "Alt. Từ chối hồ sơ (BCT Adapter)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tenNguoiXuLy\": \"Can bo A\",\n  \"lyDo\": \"Thieu giay to hop le\"\n}"
+        },
+        "url": "{{bct_ad}}/bct/thu-tuc-1/ho-so/{{maSoHoSo}}/tu-choi",
+        "description": "Luồng thay thế bước 3 — tra cứu NSW kỳ vọng businessStatus=TU_CHOI."
+      }S
+    },
+    {
+      "name": "Dev. Nộp hồ sơ REST (BCT Gateway)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"maSoHoSo\": \"TEST-E2E-001\",\n  \"tenNguoiGui\": \"{{tenNguoiGui}}\"\n}"
+        },
+        "url": "{{bct_gw}}/bct/thu-tuc-1/gui-ho-so",
+        "description": "Endpoint dev/test — bỏ qua NSW, gửi thẳng BCT gateway."
+      }
+    }
+  ]
+}

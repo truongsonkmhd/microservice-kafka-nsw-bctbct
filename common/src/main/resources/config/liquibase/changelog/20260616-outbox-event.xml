@@ -1,0 +1,40 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <changeSet author="dev-a" id="20260616-outbox-event">
+        <createTable tableName="outbox_event">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="topic" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="dlq_topic" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="payload" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="payload_type" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="aggregate_key" type="VARCHAR(255)"/>
+            <column name="status" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="retry_count" type="INT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="error_detail" type="VARCHAR(2000)"/>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="published_at" type="TIMESTAMP"/>
+        </createTable>
+        <createIndex indexName="idx_outbox_status_created" tableName="outbox_event">
+            <column name="status"/>
+            <column name="created_at"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>

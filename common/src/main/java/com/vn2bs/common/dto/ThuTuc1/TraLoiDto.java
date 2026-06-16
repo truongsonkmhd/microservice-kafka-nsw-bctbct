@@ -12,4 +12,5 @@ import lombok.Data;
 public class TraLoiDto {
     private String maSoHoSo;
     private String ketQua;
+    private String correlationId;
 }

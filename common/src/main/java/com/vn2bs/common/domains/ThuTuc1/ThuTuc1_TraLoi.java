@@ -27,4 +27,5 @@ public class ThuTuc1_TraLoi extends BaseEntity<Long> {
     private String bucketName;
     private String vanBan;
     private List<String> taiLieuDinhKem;
+    private String correlationId;
 }

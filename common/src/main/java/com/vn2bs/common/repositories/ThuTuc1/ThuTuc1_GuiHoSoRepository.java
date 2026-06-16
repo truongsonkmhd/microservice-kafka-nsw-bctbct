@@ -14,5 +14,7 @@ public interface ThuTuc1_GuiHoSoRepository extends JpaRepository<ThuTuc1_GuiHoSo
 
     Optional<ThuTuc1_GuiHoSo> findByMaSoHoSo(String maSoHoSo);
 
+    Optional<ThuTuc1_GuiHoSo> findByBucketName(String bucketName);
+
     List<ThuTuc1_GuiHoSo> findByBusinessStatus(BusinessStatus businessStatus);
 }

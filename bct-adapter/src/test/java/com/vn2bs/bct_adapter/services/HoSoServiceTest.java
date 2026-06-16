@@ -17,6 +17,8 @@ import com.vn2bs.common.domains.BusinessStatus;
 import com.vn2bs.common.domains.Status;
 import com.vn2bs.common.domains.ThuTuc1.ThuTuc1_GuiHoSo;
 import com.vn2bs.common.repositories.ThuTuc1.ThuTuc1_GuiHoSoRepository;
+import com.vn2bs.common.services.BusinessStatusValidator;
+import com.vn2bs.common.services.MessageLogService;
 
 @ExtendWith(MockitoExtension.class)
 class HoSoServiceTest {
@@ -30,6 +32,12 @@ class HoSoServiceTest {
     @Mock
     private DuyetHoSoService duyetHoSoService;
 
+    @Mock
+    private MessageLogService messageLogService;
+
+    @Mock
+    private BusinessStatusValidator businessStatusValidator;
+
     @InjectMocks
     private HoSoService hoSoService;
 
@@ -37,6 +45,7 @@ class HoSoServiceTest {
     void markChoXuLy_updatesBusinessStatus() {
         ThuTuc1_GuiHoSo message = new ThuTuc1_GuiHoSo();
         message.setMaSoHoSo("NSW-2026-001");
+        message.setCorrelationId("cid-1");
 
         ThuTuc1_GuiHoSo existing = new ThuTuc1_GuiHoSo();
         existing.setMaSoHoSo("NSW-2026-001");
@@ -44,6 +53,7 @@ class HoSoServiceTest {
 
         when(guiHoSoRepository.findByMaSoHoSo("NSW-2026-001")).thenReturn(Optional.of(existing));
         when(guiHoSoRepository.save(existing)).thenReturn(existing);
+        when(messageLogService.isAlreadyProcessed("cid-1")).thenReturn(false);
 
         hoSoService.markChoXuLy(message);
 

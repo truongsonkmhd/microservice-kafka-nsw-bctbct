@@ -6,8 +6,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.vn2bs.common.config.GlobalConfig;
@@ -15,6 +15,7 @@ import com.vn2bs.common.domains.Status;
 import com.vn2bs.common.domains.ThuTuc1.ThuTuc1_TraLoi;
 import com.vn2bs.common.dto.ThuTuc1.TraLoiDto;
 import com.vn2bs.common.repositories.ThuTuc1.ThuTuc1_TraLoiRepository;
+import com.vn2bs.common.services.OutboxService;
 import com.vn2bs.common.utils.NameUtil;
 import com.vn2bs.nsw_gateway.mapper.ThuTuc1.TraLoiMapper;
 
@@ -43,8 +44,9 @@ public class BCTMessageHandler {
     private TraLoiMapper traLoiMapper;
 
     @Autowired
-    private KafkaTemplate<String, ThuTuc1_TraLoi> kafkaTemplate;
+    private OutboxService outboxService;
 
+    @Transactional
     public void ThuTuc1_TraLoi(TraLoiDto message, MultipartFile vanBan, List<MultipartFile> tepDinhKem)
             throws InvalidKeyException, ErrorResponseException, InsufficientDataException, InternalException,
             InvalidResponseException, NoSuchAlgorithmException, ServerException, XmlParserException,
@@ -96,10 +98,11 @@ public class BCTMessageHandler {
         entity = traLoiRepository.save(entity);
         log.info("Saved TraLoi entity: {}", entity);
 
-        try {
-            kafkaTemplate.send(GlobalConfig.Kafka.Topic.BCT.ThuTuc1.TRA_LOI, entity);
-        } catch (Exception ex) {
-            log.error("Error sending message to Kafka for TraLoi id={} error={}", entity.getId(), ex.getMessage());
-        }
+        outboxService.enqueueObject(
+                GlobalConfig.Kafka.Topic.BCT.ThuTuc1.TRA_LOI,
+                GlobalConfig.Kafka.Topic.BCT.ThuTuc1.TRA_LOI_DLQ,
+                entity,
+                "ThuTuc1_TraLoi",
+                entity.getMaSoHoSo());
     }
 }

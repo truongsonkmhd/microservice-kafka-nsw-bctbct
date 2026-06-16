@@ -2,8 +2,11 @@ package com.vn2bs.nsw_adapter.client;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.ws.client.core.WebServiceMessageCallback;
 import org.springframework.ws.client.core.WebServiceTemplate;
+import org.springframework.ws.soap.SoapMessage;
 
+import com.vn2bs.common.utils.CorrelationIdSupport;
 import com.vn2bs.nsw_adapter.xsd.bct.guihoso.GuiHoSoRequest;
 import com.vn2bs.nsw_adapter.xsd.bct.guihoso.GuiHoSoResponse;
 
@@ -24,14 +27,21 @@ public class BctGuiHoSoClient {
         this.webServiceTemplate = webServiceTemplate;
     }
 
-    public String sendGuiHoSo(String maSoHoSo, String tenNguoiGui) {
+    public String sendGuiHoSo(String maSoHoSo, String tenNguoiGui, String correlationId) {
         GuiHoSoRequest request = new GuiHoSoRequest();
         request.setMaSoHoSo(maSoHoSo);
         request.setTenNguoiGui(tenNguoiGui);
 
-        log.info("Sending GuiHoSo SOAP to BCT url={} maSoHoSo={}", bctSoapUrl, maSoHoSo);
+        WebServiceMessageCallback headerCallback = message -> {
+            if (message instanceof SoapMessage soapMessage) {
+                CorrelationIdSupport.setHeader(soapMessage, correlationId);
+            }
+        };
 
-        Object response = webServiceTemplate.marshalSendAndReceive(bctSoapUrl, request);
+        log.info("Sending GuiHoSo SOAP to BCT url={} maSoHoSo={} correlationId={}",
+                bctSoapUrl, maSoHoSo, correlationId);
+
+        Object response = webServiceTemplate.marshalSendAndReceive(bctSoapUrl, request, headerCallback);
         if (!(response instanceof GuiHoSoResponse soapResponse)) {
             throw new IllegalStateException("Unexpected SOAP response type: " + response);
         }

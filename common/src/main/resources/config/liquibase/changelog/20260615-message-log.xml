@@ -1,0 +1,39 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <changeSet author="dev-a" id="20260615-message-log">
+        <createTable tableName="message_log">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="message_id" type="VARCHAR(36)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="correlation_id" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sender" type="VARCHAR(20)"/>
+            <column name="receiver" type="VARCHAR(20)"/>
+            <column name="message_type" type="VARCHAR(30)"/>
+            <column name="payload_xml" type="TEXT"/>
+            <column name="log_status" type="VARCHAR(30)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="error_detail" type="VARCHAR(2000)"/>
+            <column name="ma_so_ho_so" type="VARCHAR(255)"/>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createIndex indexName="idx_message_log_correlation" tableName="message_log">
+            <column name="correlation_id"/>
+            <column name="log_status"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="dev-a" id="20260615-traloi-correlation">
+        <addColumn tableName="thutuc1_traloi">
+            <column name="correlation_id" type="VARCHAR(255)"/>
+        </addColumn>
+    </changeSet>
+</databaseChangeLog>

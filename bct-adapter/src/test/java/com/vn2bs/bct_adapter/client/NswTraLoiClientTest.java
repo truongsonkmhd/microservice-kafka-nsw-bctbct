@@ -38,17 +38,17 @@ class NswTraLoiClientTest {
         response.setMaSoHoSo("NSW-2026-001");
         response.setKetQua("success");
 
-        when(webServiceTemplate.marshalSendAndReceive(anyString(), any(TraLoiRequest.class)))
+        when(webServiceTemplate.marshalSendAndReceive(anyString(), any(TraLoiRequest.class), any()))
                 .thenReturn(response);
 
-        assertTrue(client.send("NSW-2026-001", "Phe duyet"));
+        assertTrue(client.send("NSW-2026-001", "Phe duyet", "cid-1"));
     }
 
     @Test
     void send_returnsFalseWhenUnexpectedResponse() {
-        when(webServiceTemplate.marshalSendAndReceive(anyString(), any(TraLoiRequest.class)))
+        when(webServiceTemplate.marshalSendAndReceive(anyString(), any(TraLoiRequest.class), any()))
                 .thenReturn("unexpected");
 
-        assertFalse(client.send("NSW-2026-001", "Phe duyet"));
+        assertFalse(client.send("NSW-2026-001", "Phe duyet", "cid-1"));
     }
 }

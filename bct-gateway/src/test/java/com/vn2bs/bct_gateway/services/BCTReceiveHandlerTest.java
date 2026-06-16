@@ -15,7 +15,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.kafka.core.KafkaTemplate;
 
 import com.vn2bs.bct_gateway.mapper.ThuTuc1.GuiHoSoMapper;
 import com.vn2bs.bct_gateway.xsd.bct.guihoso.GuiHoSoRequest;
@@ -25,6 +24,8 @@ import com.vn2bs.common.domains.BusinessStatus;
 import com.vn2bs.common.domains.Status;
 import com.vn2bs.common.domains.ThuTuc1.ThuTuc1_GuiHoSo;
 import com.vn2bs.common.repositories.ThuTuc1.ThuTuc1_GuiHoSoRepository;
+import com.vn2bs.common.services.MessageLogService;
+import com.vn2bs.common.services.OutboxService;
 
 import io.minio.MinioClient;
 
@@ -41,7 +42,10 @@ class BCTReceiveHandlerTest {
     private GuiHoSoMapper guiHoSoMapper;
 
     @Mock
-    private KafkaTemplate<String, ThuTuc1_GuiHoSo> kafkaTemplate;
+    private MessageLogService messageLogService;
+
+    @Mock
+    private OutboxService outboxService;
 
     @InjectMocks
     private BCTReceiveHandler bctReceiveHandler;
@@ -71,7 +75,13 @@ class BCTReceiveHandlerTest {
         assertEquals("success", response.getKetQua());
         assertEquals(Status.CREATED, entity.getStatus());
         assertEquals(BusinessStatus.KHOI_TAO, entity.getBusinessStatus());
-        verify(kafkaTemplate).send(eq(GlobalConfig.Kafka.Topic.BCT.ThuTuc1.GUI_HO_SO), eq(saved));
+        verify(outboxService).enqueueObject(
+                eq(GlobalConfig.Kafka.Topic.BCT.ThuTuc1.GUI_HO_SO),
+                eq(GlobalConfig.Kafka.Topic.BCT.ThuTuc1.GUI_HO_SO_DLQ),
+                eq(saved),
+                eq("ThuTuc1_GuiHoSo"),
+                eq("NSW-2026-001"));
+        verify(messageLogService).logReceived(any(), any(), any(), any(), any(), eq("NSW-2026-001"));
     }
 
     @Test
@@ -88,7 +98,7 @@ class BCTReceiveHandlerTest {
         assertEquals("NSW-2026-001", response.getMaSoHoSo());
         assertEquals("success", response.getKetQua());
         verify(guiHoSoRepository, never()).save(any());
-        verify(kafkaTemplate, never()).send(any(), any());
+        verify(outboxService, never()).enqueueObject(any(), any(), any(), any(), any());
     }
 
     @Test

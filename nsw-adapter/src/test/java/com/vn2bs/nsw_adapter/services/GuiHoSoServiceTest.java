@@ -2,6 +2,7 @@ package com.vn2bs.nsw_adapter.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
@@ -13,11 +14,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.kafka.core.KafkaTemplate;
 
 import com.vn2bs.common.domains.BusinessStatus;
 import com.vn2bs.common.domains.Status;
 import com.vn2bs.common.domains.ThuTuc1.ThuTuc1_GuiHoSo;
 import com.vn2bs.common.repositories.ThuTuc1.ThuTuc1_GuiHoSoRepository;
+import com.vn2bs.common.services.BusinessStatusValidator;
+import com.vn2bs.common.services.MessageLogService;
 import com.vn2bs.nsw_adapter.client.BctGuiHoSoClient;
 
 @ExtendWith(MockitoExtension.class)
@@ -29,6 +33,15 @@ class GuiHoSoServiceTest {
     @Mock
     private BctGuiHoSoClient bctGuiHoSoClient;
 
+    @Mock
+    private MessageLogService messageLogService;
+
+    @Mock
+    private BusinessStatusValidator businessStatusValidator;
+
+    @Mock
+    private KafkaTemplate<String, ThuTuc1_GuiHoSo> kafkaTemplate;
+
     @InjectMocks
     private GuiHoSoService guiHoSoService;
 
@@ -38,11 +51,14 @@ class GuiHoSoServiceTest {
         entity.setId(1L);
         entity.setMaSoHoSo("NSW-2026-0001");
         entity.setTenNguoiGui("Cong ty ABC");
+        entity.setCorrelationId("cid-1");
         entity.setStatus(Status.CREATED);
+        entity.setBusinessStatus(BusinessStatus.KHOI_TAO);
 
         List<Status> savedStatuses = new ArrayList<>();
         List<BusinessStatus> savedBusinessStatuses = new ArrayList<>();
 
+        when(messageLogService.isAlreadyProcessed("cid-1")).thenReturn(false);
         when(guiHoSoRepository.findById(1L)).thenReturn(Optional.of(entity));
         when(guiHoSoRepository.save(any(ThuTuc1_GuiHoSo.class))).thenAnswer(inv -> {
             ThuTuc1_GuiHoSo saved = inv.getArgument(0);
@@ -50,7 +66,7 @@ class GuiHoSoServiceTest {
             savedBusinessStatuses.add(saved.getBusinessStatus());
             return saved;
         });
-        when(bctGuiHoSoClient.sendGuiHoSo("NSW-2026-0001", "Cong ty ABC")).thenReturn("success");
+        when(bctGuiHoSoClient.sendGuiHoSo("NSW-2026-0001", "Cong ty ABC", "cid-1")).thenReturn("success");
 
         guiHoSoService.process(entity);
 
@@ -59,20 +75,23 @@ class GuiHoSoServiceTest {
     }
 
     @Test
-    void process_onFailure_setsFailed() {
+    void process_onFailure_setsDeadLetter() {
         ThuTuc1_GuiHoSo entity = new ThuTuc1_GuiHoSo();
         entity.setId(1L);
         entity.setMaSoHoSo("NSW-2026-0001");
         entity.setTenNguoiGui("Cong ty ABC");
+        entity.setCorrelationId("cid-1");
         entity.setStatus(Status.CREATED);
+        entity.setBusinessStatus(BusinessStatus.KHOI_TAO);
 
+        when(messageLogService.isAlreadyProcessed("cid-1")).thenReturn(false);
         when(guiHoSoRepository.findById(1L)).thenReturn(Optional.of(entity));
         when(guiHoSoRepository.save(any(ThuTuc1_GuiHoSo.class))).thenAnswer(inv -> inv.getArgument(0));
-        when(bctGuiHoSoClient.sendGuiHoSo("NSW-2026-0001", "Cong ty ABC"))
+        when(bctGuiHoSoClient.sendGuiHoSo(anyString(), anyString(), anyString()))
                 .thenThrow(new RuntimeException("timeout"));
 
         guiHoSoService.process(entity);
 
-        assertEquals(Status.FAILED, entity.getStatus());
+        assertEquals(Status.DEAD_LETTER, entity.getStatus());
     }
 }

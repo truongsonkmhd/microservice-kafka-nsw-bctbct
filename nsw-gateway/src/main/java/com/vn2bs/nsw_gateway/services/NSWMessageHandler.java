@@ -6,17 +6,22 @@ import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.vn2bs.common.config.GlobalConfig;
 import com.vn2bs.common.domains.BusinessStatus;
+import com.vn2bs.common.domains.MessageParty;
+import com.vn2bs.common.domains.MessageType;
 import com.vn2bs.common.domains.Status;
 import com.vn2bs.common.domains.ThuTuc1.ThuTuc1_GuiHoSo;
 import com.vn2bs.common.dto.ThuTuc1.GuiHoSoDto;
 import com.vn2bs.common.dto.ThuTuc1.GuiHoSoSubmitResponse;
 import com.vn2bs.common.repositories.ThuTuc1.ThuTuc1_GuiHoSoRepository;
+import com.vn2bs.common.services.MessageLogService;
+import com.vn2bs.common.services.OutboxService;
+import com.vn2bs.common.utils.CorrelationIdSupport;
 import com.vn2bs.common.utils.NameUtil;
 import com.vn2bs.nsw_gateway.mapper.ThuTuc1.GuiHoSoMapper;
 
@@ -50,8 +55,12 @@ public class NSWMessageHandler {
     private MaSoHoSoGenerator maSoHoSoGenerator;
 
     @Autowired
-    private KafkaTemplate<String, ThuTuc1_GuiHoSo> kafkaTemplate;
+    private MessageLogService messageLogService;
 
+    @Autowired
+    private OutboxService outboxService;
+
+    @Transactional
     public GuiHoSoSubmitResponse ThuTuc1_GuiHoSo(GuiHoSoDto message, List<MultipartFile> tepDinhKem)
             throws InvalidKeyException, ErrorResponseException, InsufficientDataException, InternalException,
             InvalidResponseException, NoSuchAlgorithmException, ServerException, XmlParserException,
@@ -64,6 +73,7 @@ public class NSWMessageHandler {
         ThuTuc1_GuiHoSo entity = guiHoSoMapper.toEntity(message);
         entity.setStatus(Status.CREATED);
         entity.setBusinessStatus(BusinessStatus.KHOI_TAO);
+        entity.setCorrelationId(CorrelationIdSupport.generate());
 
         final String bucketName = NameUtil.toBucketNameSafe(BUCKET_PREFIX, maSoHoSo);
         entity.setBucketName(bucketName);
@@ -91,13 +101,23 @@ public class NSWMessageHandler {
         }
 
         entity = guiHoSoRepository.save(entity);
-        log.info("Saved GuiHoSo entity: id={} maSoHoSo={}", entity.getId(), entity.getMaSoHoSo());
+        log.info("Saved GuiHoSo entity: id={} maSoHoSo={} correlationId={}",
+                entity.getId(), entity.getMaSoHoSo(), entity.getCorrelationId());
 
-        try {
-            kafkaTemplate.send(GlobalConfig.Kafka.Topic.NSW.ThuTuc1.GUI_HO_SO, entity);
-        } catch (Exception ex) {
-            log.error("Error sending GuiHoSo to Kafka id={} error={}", entity.getId(), ex.getMessage());
-        }
+        messageLogService.logSent(
+                entity.getCorrelationId(),
+                MessageParty.NSW,
+                MessageParty.NSW,
+                MessageType.GUI_HO_SO,
+                "<GuiHoSo maSoHoSo=\"" + entity.getMaSoHoSo() + "\"/>",
+                entity.getMaSoHoSo());
+
+        outboxService.enqueueObject(
+                GlobalConfig.Kafka.Topic.NSW.ThuTuc1.GUI_HO_SO,
+                GlobalConfig.Kafka.Topic.NSW.ThuTuc1.GUI_HO_SO_DLQ,
+                entity,
+                "ThuTuc1_GuiHoSo",
+                entity.getMaSoHoSo());
 
         GuiHoSoSubmitResponse response = new GuiHoSoSubmitResponse();
         response.setMaSoHoSo(entity.getMaSoHoSo());
